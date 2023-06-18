@@ -1,0 +1,55 @@
+diff -Zburp liboping-1.10.0/src/liboping.c liboping-1.10.0-modified/src/liboping.c
+--- liboping-1.10.0/src/liboping.c	2017-05-11 01:32:27.000000000 -0600
++++ liboping-1.10.0-modified/src/liboping.c	2021-11-23 15:34:27.093950117 -0700
+@@ -1544,9 +1544,9 @@ static pinghost_t *ping_host_search (pin
+ 	return (ph);
+ }
+ 
+-int ping_host_add (pingobj_t *obj, const char *host)
++static int ping_host_add_helper (pinghost_t** phptr, pingobj_t *obj, const char *host)
+ {
+-	pinghost_t *ph;
++    #define ph (*phptr)
+ 
+ 	struct addrinfo  ai_hints;
+ 	struct addrinfo *ai_list, *ai_ptr;
+@@ -1701,8 +1701,28 @@ int ping_host_add (pingobj_t *obj, const
+ 	obj->table[ph->ident % PING_TABLE_LEN] = ph;
+ 
+ 	return (0);
++
++    #undef ph
++} /* int ping_host_add_helper */
++
++int ping_host_add (pingobj_t *obj, const char *host)
++{
++    pinghost_t *ph;
++    return ping_host_add_helper (&ph, obj, host);
+ } /* int ping_host_add */
+ 
++int ping_host_add_with_context (pingobj_t *obj, const char *host, void* context)
++{
++    pinghost_t *ph;
++    int result = ping_host_add_helper (&ph, obj, host);
++    if (result == 0)
++    {
++        ph->context = context;
++    }
++
++    return result;
++} /* int ping_host_add_with_context */
++
+ int ping_host_remove (pingobj_t *obj, const char *host)
+ {
+ 	pinghost_t *pre, *cur, *target;
+diff -Zburp liboping-1.10.0/src/oping.h liboping-1.10.0-modified/src/oping.h
+--- liboping-1.10.0/src/oping.h	2017-05-11 01:32:27.000000000 -0600
++++ liboping-1.10.0-modified/src/oping.h	2021-11-23 15:19:23.634585820 -0700
+@@ -71,6 +71,7 @@ int ping_setopt (pingobj_t *obj, int opt
+ int ping_send (pingobj_t *obj);
+ 
+ int ping_host_add (pingobj_t *obj, const char *host);
++int ping_host_add_with_context (pingobj_t *obj, const char *host, void* context);
+ int ping_host_remove (pingobj_t *obj, const char *host);
+ 
+ pingobj_iter_t *ping_iterator_get (pingobj_t *obj);

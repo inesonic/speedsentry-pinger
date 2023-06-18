@@ -1,0 +1,12 @@
+[Unit]
+Description=Pinger Service
+After=network.target auditd.service nginx.service
+
+[Service]
+ExecStart=/usr/sbin/pinger Pinger
+Restart=on-failure
+Type=simple
+StandardOutput=journal+console
+
+[Install]
+WantedBy=multi-user.target
